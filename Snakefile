@@ -39,8 +39,10 @@ rule all:
         #expand("results/fc_two_groups_tcc/{condition}/summarize_result.rds", condition = sim_params.keys()),
         #expand("results/fc_two_groups_nstart2/{condition}/summarize_result.rds", condition = sim_params.keys()),
         #"results/all_metrics.rds",
-        "results/fdr_q.html",
-        "results/real_data/result.rds",
+        #"results/fdr_q.html",
+        #"results/real_data/result.rds",
+        #"results/two_groups_simseq/all_results.rds",
+        "results/three_groups_simseq/all_results.rds",
         
 rule bench_2groups:
     output: 
@@ -55,6 +57,30 @@ rule bench_2groups:
         "logs/two_groups/{condition}/stderr.log",
     script:
         "scripts/bench_2groups.R"
+        
+rule bench_2groups_simseq:
+    output: 
+        "results/two_groups_simseq/all_results.rds",
+        #"results/two_groups_simseq/params.json"
+    threads:
+        12
+    log:
+        "logs/two_groups_simseq/stdout.log",
+        "logs/two_groups_simseq/stderr.log",
+    script:
+        "scripts/simseq_2groups.R"
+
+rule bench_3groups_simseq:
+    output: 
+        "results/three_groups_simseq/all_results.rds",
+        #"results/three_groups_simseq/params.json"
+    threads:
+        12
+    log:
+        "logs/three_groups_simseq/stdout.log",
+        "logs/three_groups_simseq/stderr.log",
+    script:
+        "scripts/simseq_3groups.R"
 
 rule bench_2groups_mbcluster_with_tcc:
     output: 

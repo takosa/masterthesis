@@ -2,11 +2,16 @@
 run_mbcluster <- function(counts, group, sizefactors = NULL, k = 3, nstart = 1, dispersions = NULL, select_type = 1) {
 
   ptm <- proc.time()
-  ###
+  # sizefactor
   if (is.null(sizefactors)) {
     mb <- MBCluster.Seq::RNASeq.Data(Count = counts, Normalizer = NULL, Treatment = group)
   } else {
     mb <- MBCluster.Seq::RNASeq.Data(Count = counts, Normalizer = log(sizefactors), Treatment = group)
+  }
+  # dispersion
+  if (!is.null(dispersions)) {
+    dispersions[is.na(dispersions)] <- 1.0
+    mb$NB.Dispersion <- dispersions
   }
   c0 <- lapply(seq_len(nstart), function(i) {
     MBCluster.Seq::KmeansPlus.RNASeq(data = mb, nK = k, model = "nbinom")
@@ -213,6 +218,38 @@ get_sizefactors <- function(counts, group, method = c("tmm", "rle", "mrn", "eee"
     }
   )
   sizefactors
+}
+
+
+
+
+get_dispersions <- function(counts, group, method = c("edger", "deseq2", "dss")) {
+
+  method <- match.arg(method)
+  switch (method,
+    edger = {
+      y <- edgeR::DGEList(counts = counts, group = group)
+      y <- edgeR::calcNormFactors(y)
+      design <- model.matrix(~group)
+      y <- edgeR::estimateDisp(y, design)
+      dispersion <- edgeR::getDispersion(y)
+    },
+    deseq2 = {
+      group <- as.factor(group)
+      dds <- DESeq2::DESeqDataSetFromMatrix(countData = counts, colData = data.frame(g = group), design = ~g)
+      dds <- DESeq2::estimateSizeFactors(dds)
+      dds <- DESeq2::estimateDispersions(dds)
+      dispersion <- DESeq2::dispersions(dds)
+      dispersion[is.na(dispersion)] <- 1
+    },
+    dss = {
+      seqData <- DSS::newSeqCountSet(counts, group)
+      seqData <- DSS::estNormFactors(seqData, method = "lr")
+      seqData <- DSS::estDispersion(seqData, trend = FALSE)
+      dispersion <- DSS::dispersion(seqData)
+    }
+  )
+  as.numeric(dispersion)
 }
 
 

@@ -15,7 +15,7 @@ library(tidyverse)
 
 ```{r}
 fdr_q <- map(snakemake@input, function(input_file) {
-  read_rds(input_file) %>% mutate(design = str_split(input_file, "/")[[1]][2])
+  read_rds(input_file)$q %>% mutate(design = str_split(input_file, "/")[[1]][2])
 })
 ```
 
@@ -41,7 +41,8 @@ assign_ <- c("0.50_0.50" = "0.5, 0.5", "0.70_0.30" = "0.7, 0.3",
              "0.80_0.10_0.10" = "0.8, 0.1, 0.1", "0.50_0.50_0.00" = "0.5, 0.5, 0.0",
              "1.00_0.00_0.00" = "1.0, 0.0, 0.0")
 fdr_q <- bind_rows(fdr_q) %>%
-  mutate(Method = method_[Method], Assign = factor(assign_[Assign], levels = assign_))
+  mutate(Method = method_[Method], Assign = factor(assign_[Assign], levels = assign_)) %>%
+  rename(q.value = x, fdr = y)
 readr::write_rds(fdr_q, "fdr_q.rds")
 ```
 
@@ -81,3 +82,74 @@ fdr_q %>% filter(design == "two_groups") %>%
 #  facet_grid(PDEG ~ Assign) + 
 #  theme(aspect.ratio = 1)
 ```
+
+```{r}
+fdr_q <- map(snakemake@input, function(input_file) {
+  read_rds(input_file)$p %>% mutate(design = str_split(input_file, "/")[[1]][2])
+})
+```
+
+```{r}
+fdr_q[[1]]
+```
+
+
+```{r} 
+bind_rows(fdr_q) %>% pull(Method) %>% unique()
+```
+
+
+```{r} 
+method_ <- c(mbcluster2 = "MBCluster.Seq, k = 2", mbcluster3 = "MBCluster.Seq, k = 3",
+             mbcluster4 = "MBCluster.Seq, k = 4", mbcluster_nstart = "MBCluster.Seq*",
+             edger = "edgeR", deseq2 = "DESeq2", tcc = "TCC",
+             dreamseq = "DREAMSeq", eee_mbcluster3 = "EEE-MBCluster.Seq",
+             eee_mbcluster3_nstart = "EEE-MBCCluster.Seq*", mbcluster5 = "MBCluster.Seq, k = 5")
+assign_ <- c("0.50_0.50" = "0.5, 0.5", "0.70_0.30" = "0.7, 0.3",
+             "0.90_0.10" = "0.9, 0.1", "1.00_0.00" = "1.0, 0.0",
+             "0.33_0.33_0.33" = "1/3, 1/3, 1/3", "0.60_0.20_0.20" = "0.6, 0.2, 0.2",
+             "0.80_0.10_0.10" = "0.8, 0.1, 0.1", "0.50_0.50_0.00" = "0.5, 0.5, 0.0",
+             "1.00_0.00_0.00" = "1.0, 0.0, 0.0")
+fdr_q <- bind_rows(fdr_q) %>%
+  mutate(Method = method_[Method], Assign = factor(assign_[Assign], levels = assign_)) %>%
+  rename(p.value = x, fdr = y)
+readr::write_rds(fdr_q, "fdr_p.rds")
+```
+
+
+```{r}
+fdr_q %>% filter(design == "two_groups") %>% 
+  ggplot(aes(p.value, fdr)) +
+  geom_line(aes(col = Method)) +
+  geom_abline(slope = 1, intercept = 0) + 
+  facet_grid(PDEG ~ Assign) + 
+  theme(aspect.ratio = 1)
+```
+
+```{r}
+#fdr_q %>% filter(design == "three_groups") %>% 
+#  ggplot(aes(p.value, fdr)) +
+#  geom_line(aes(col = Method)) +
+#  geom_abline(slope = 1, intercept = 0) + 
+#  facet_grid(PDEG ~ Assign) + 
+#  theme(aspect.ratio = 1)
+```
+
+```{r}
+#fdr_q %>% filter(design == "two_groups_tcc") %>% 
+#  ggplot(aes(p.value, fdr)) +
+#  geom_line(aes(col = Method)) +
+#  geom_abline(slope = 1, intercept = 0) + 
+#  facet_grid(PDEG ~ Assign) + 
+#  theme(aspect.ratio = 1)
+```
+
+```{r}
+#fdr_q %>% filter(design == "fc_two_groups") %>% 
+#  ggplot(aes(p.value, fdr)) +
+#  geom_line(aes(col = Method)) +
+#  geom_abline(slope = 1, intercept = 0) + 
+#  facet_grid(PDEG ~ Assign) + 
+#  theme(aspect.ratio = 1)
+```
+

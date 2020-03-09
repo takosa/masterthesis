@@ -72,7 +72,7 @@ all_results <- mclapply(seq_len(p$nsim), function(s) {
   result$mbcluster_nstart <- run_mbcluster(counts = tcc$count, group = tcc$group$group, k = 3, nstart = 5)
   # edgeR
   cat("start edgeR\n")
-  result$edger <- run_edegr(counts = tcc$count, group = tcc$group$group, coef = 2)
+  result$edger <- run_edger(counts = tcc$count, group = tcc$group$group, coef = 2)
   # DESeq2
   cat("start DESeq2\n")
   result$deseq2 <- run_deseq2(counts = tcc$count, group = tcc$group$group, test = "LRT", reduced = ~1)
